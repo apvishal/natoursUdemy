@@ -6,18 +6,40 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const AppError = require('./Utils/AppError');
 const globalErrorHandler = require('./controller/errorController');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+// const mongooseSanitize = require ('express-mongo-sanitize');
+// const xssClean = require('xss-clean');
+
 
 // instance of express...
 const app = express();
 
+
+// set the security headers...
+app.use(helmet());
+
 // app.use() enables you to use middleware functions...express.json is a middleware...
-app.use(express.json());
+// these are body parsers...
+app.use(express.json({limit: '10kb'}));
 app.use(express.static(`${__dirname}/public`));
 
-if (process.env.NODE_ENV === 'development') {
+
+// use for debugging in development mode
+if (process.env.NODE_ENV === 'development') { 
   console.log('using morgan for development mode');
   app.use(morgan('dev'));
 }
+
+// limit the number of requests from the same IP
+const limter = rateLimit({
+  max: 50,
+  windowMs: 60 * 60 * 1000,
+  message: "too many requests!  try again in an hour..."
+});
+
+// use it on /api...
+app.use('/api', limter);
 
 // we can create our own middleware...
 // NOTE: all middle ware functions have access to the REQ, RES, and NEXT parameters...
@@ -30,6 +52,7 @@ if (process.env.NODE_ENV === 'development') {
 });
 */
 // we can also manipulate the req body in middleware!...
+// example of a middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   console.log(req.headers.authorization);
