@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
+// const User = require('./userModel');
 
 // create a new tour schema...
 const tourSchema = mongoose.Schema(
@@ -11,7 +12,7 @@ const tourSchema = mongoose.Schema(
       unique: true,
       // BUILT-IN VALIDATORS...
       maxlength: [40, 'name must be less than or equal to 40 chars...'],
-      minlength: [10, 'name must be atleast 10 chars...'],
+      minlength: [10, 'name must be atleast 10 chars...']
       // validate: [ validator.isAlpha, 'Name must have chars only..']
     },
     slug: String,
@@ -48,12 +49,13 @@ const tourSchema = mongoose.Schema(
     priceDiscount: {
       type: Number,
       validate: {
-        validator: function (val) {
-          // the problem with this approach is: 'this' will point to the current document when creating new items, 
+        validator: function(val) {
+          // the problem with this approach is: 'this' will point to the current document when creating new items,
           // NOT when updating old items...
           return val < this.price;
         },
-        message: 'the price discount {VALUE} must be less than the price of this item...'
+        message:
+          'the price discount {VALUE} must be less than the price of this item...'
       }
     },
     summary: {
@@ -78,7 +80,32 @@ const tourSchema = mongoose.Schema(
     secret: {
       type: Boolean,
       default: false
-    }
+    },
+    startLocation: {
+      // geoJason Object, must have a type of string and Point (or another geometric type..., along with a coordinate)
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+      },
+      coordinates: [Number],
+      address: String,
+      description: String
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point']
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number
+      }
+    ],
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }]
   },
   {
     // these are the options...
@@ -100,6 +127,14 @@ tourSchema.pre('save', function(next) {
   next();
 });
 
+// tourSchema.pre('save', async function(next) {
+//   // loop through the ids...
+//   // the async function will return an array of promises...
+//   const guidePromises = this.guides.map(async id => await User.findById(id));
+//   // await on all promises...
+//   this.guides = await Promise.all(guidePromises);
+//   next();
+// });
 // tourSchema.pre('save', function() {
 //   console.log(this);
 // });
@@ -118,6 +153,17 @@ tourSchema.pre(/find/, function(next) {
   this.find({ secret: { $ne: true } });
   next();
 });
+// populate all of the objectIds with their actual data... 
+tourSchema.pre(/^find/, function(next) {
+  // add 'populate' to the query...
+  this.populate({
+    // get the actual 'guides' data
+    path: 'guides',
+    // get rid of unwanted data to be returned...
+    select: '-__v -passwordChangedAt'
+  });
+  next();
+});
 
 tourSchema.post(/find/, function(doc, next) {
   // console.log (doc);
@@ -134,6 +180,13 @@ tourSchema.pre('aggregate', function(next) {
   console.log(this.pipeline());
   next();
 });
+
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id'
+});
+
 
 // create a model using the schema created above... (first arg is a name of the mode, second is the schema we want to use...)
 module.exports = mongoose.model('Tour', tourSchema);

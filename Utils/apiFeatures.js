@@ -30,6 +30,7 @@ class APIFeatures {
   }
   sort() {
     console.log('sort');
+    console.log(this.queryInfo.sort);
     // APPLY ANY SORTING TO THE QUERY
     if (this.queryInfo.sort) {
       // the 'sort' option was passed through the url...

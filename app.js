@@ -4,29 +4,49 @@ const express = require('express');
 const morgan = require('morgan');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 const AppError = require('./Utils/AppError');
 const globalErrorHandler = require('./controller/errorController');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-// const mongooseSanitize = require ('express-mongo-sanitize');
-// const xssClean = require('xss-clean');
-
+const mongooseSanitize = require('express-mongo-sanitize');
+const xssClean = require('xss-clean');
+const hpp = require('hpp');
 
 // instance of express...
 const app = express();
-
 
 // set the security headers...
 app.use(helmet());
 
 // app.use() enables you to use middleware functions...express.json is a middleware...
 // these are body parsers...
-app.use(express.json({limit: '10kb'}));
+app.use(express.json({ limit: '10kb' }));
+
+// data sanitize against query injections... such as (email: {$gt: ""})
+app.use(mongooseSanitize()); // calls a function and returns a function...  this will filter out all operators used by mongodb ( $ . )
+
+app.use(xssClean()); // cleans any user input from html with javascript code... it will convert html symbols...
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsAverage',
+      'ratingsQuanitity',
+      'maxGroupSize',
+      'difficulty',
+      'price'
+    ]
+  })
+); // prevent parameter pollution...
+
+// whjitout whitelist if we had: ?sort=duration&sort=price)  it will only use the last sort...
+
+// to serve static files...
 app.use(express.static(`${__dirname}/public`));
 
-
 // use for debugging in development mode
-if (process.env.NODE_ENV === 'development') { 
+if (process.env.NODE_ENV === 'development') {
   console.log('using morgan for development mode');
   app.use(morgan('dev'));
 }
@@ -35,7 +55,7 @@ if (process.env.NODE_ENV === 'development') {
 const limter = rateLimit({
   max: 50,
   windowMs: 60 * 60 * 1000,
-  message: "too many requests!  try again in an hour..."
+  message: 'too many requests!  try again in an hour...'
 });
 
 // use it on /api...
@@ -59,7 +79,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 //app.get('/api/v1/tours', getAllTours);
 //app.post('/api/v1/tours', uploadTour);
 //app.delete('/api/v1/tours/:id', deleteTour);
@@ -82,6 +101,7 @@ app.use((req, res, next) => {
 // mount the routers to the above with the new paths specified...
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 // middleware for all other urls that are not speciied above...
 app.all('*', (req, res, next) => {

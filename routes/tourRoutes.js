@@ -1,6 +1,8 @@
 const express = require('express');
 const tourController = require('./../controller/tourController');
 const authController = require('./../controller/authController');
+const reviewController = require('./../controller/reviewController');
+const reviewRouter = require('./reviewRoutes');
 const router = express.Router();
 
 // implemenetd and exported a function to validate the ID, it will be used as
@@ -37,6 +39,8 @@ router
     authController.restrictTo('admin', 'guide-lead'),
     tourController.deleteTour
   );
+  
+router.use('/:tourID/reviews', reviewRouter);
 
 // export the module
 module.exports = router;
