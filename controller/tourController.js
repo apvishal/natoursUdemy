@@ -2,6 +2,7 @@ const Tour = require('./../model/tourModel');
 const APIFeatures = require('./../Utils/apiFeatures');
 const catchAsync = require('./../Utils/catchAsync');
 const AppError = require('./../Utils/AppError');
+const factory = require('./handlerFactory');
 
 // callback functions...
 
@@ -41,25 +42,26 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // query will have everything after '?' in the URL...
-  console.log(req.query);
+exports.getAllTours = factory.getAll(Tour);
+// exports.getAllTours = catchAsync(async (req, res, next) => {
+//   // query will have everything after '?' in the URL...
+//   console.log(req.query);
 
-  // allocate instance of the APIFeatures class...essentially, this is BUILDING THE QUERY
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
-  // EXECUTING THE QUERY
-  const tourResults = await features.query;
+//   // allocate instance of the APIFeatures class...essentially, this is BUILDING THE QUERY
+//   const features = new APIFeatures(Tour.find(), req.query)
+//     .filter()
+//     .sort()
+//     .limitFields()
+//     .paginate();
+//   // EXECUTING THE QUERY
+//   const tourResults = await features.query;
 
-  res.status(200).json({
-    status: 'success',
-    results: tourResults.length,
-    data: { tours: tourResults }
-  });
-});
+//   res.status(200).json({
+//     status: 'success',
+//     results: tourResults.length,
+//     data: { tours: tourResults }
+//   });
+// });
 
 // exports.updateTour = catchAsync(async (req, res, next) => {
 //   // display the request body...
@@ -80,20 +82,23 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 // });
 
 // try without a try/catch block...
-exports.uploadTour = catchAsync(async (req, res, next) => {
-  // display the request body...
-  //console.log(req.body);
+// exports.uploadTour = catchAsync(async (req, res, next) => {
+//   // display the request body...
+//   //console.log(req.body);
 
-  // use create to create an instance AND save to data base at once...
-  // returns a promise...
-  const newTour = await Tour.create(req.body);
-  res.status(201).json({
-    status: 'success',
-    data: {
-      tour: newTour
-    }
-  });
-});
+//   // use create to create an instance AND save to data base at once...
+//   // returns a promise...
+//   const newTour = await Tour.create(req.body);
+//   res.status(201).json({
+//     status: 'success',
+//     data: {
+//       tour: newTour
+//     }
+//   });
+// });
+
+exports.uploadTour = factory.createOne(Tour);
+
 // exports.uploadTour = async (req, res) => {
 //   // display the request body...
 //   //console.log(req.body);
@@ -119,50 +124,55 @@ exports.uploadTour = catchAsync(async (req, res, next) => {
 //   }
 // };
 
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
-  if (!tour) {
-    return next(
-      new AppError(`no such tour with id ${req.params.id} exists...`, 404)
-    );
-  }
-  // status code will be 204 for deletion...
-  res
-    .status(204)
-    .json({ status: 'success', data: { deleted: req.params.id * 1 } });
-});
+exports.deleteTour = factory.deleteOne(Tour);
+// exports.deleteTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findByIdAndDelete(req.params.id);
+//   if (!tour) {
+//     return next(
+//       new AppError(`no such tour with id ${req.params.id} exists...`, 404)
+//     );
+//   }
+//   // status code will be 204 for deletion...
+//   res
+//     .status(204)
+//     .json({ status: 'success', data: { deleted: req.params.id * 1 } });
+// });
 
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const newTour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    // run the validators defined in the Tour model...
-    runValidators: true
-  });
-  if (!newTour) {
-    return next(
-      new AppError(`so such tour with id ${req.params.id} exists...`, 404)
-    );
-  }
-  res.status(200).json({ status: 'success', data: { tour: newTour } });
-});
 
-exports.getTour = catchAsync(async (req, res, next) => {
-  // findById is the same as findOne({_id: req.params.id})
-  const tour = await Tour.findById(req.params.id).populate('reviews');
+exports.updateTour = factory.updateOne(Tour);
 
-  if (!tour) {
-    return next(
-      new AppError(`no such tour with id ${req.params.id} exists...`, 404)
-    );
-  }
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour
-    }
-  });
-});
+// exports.updateTour = catchAsync(async (req, res, next) => {
+//   const newTour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+//     new: true,
+//     // run the validators defined in the Tour model...
+//     runValidators: true
+//   });
+//   if (!newTour) {
+//     return next(
+//       new AppError(`so such tour with id ${req.params.id} exists...`, 404)
+//     );
+//   }
+//   res.status(200).json({ status: 'success', data: { tour: newTour } });
+// });
 
+// exports.getTour = catchAsync(async (req, res, next) => {
+//   // findById is the same as findOne({_id: req.params.id})
+//   const tour = await Tour.findById(req.params.id).populate('reviews');
+
+//   if (!tour) {
+//     return next(
+//       new AppError(`no such tour with id ${req.params.id} exists...`, 404)
+//     );
+//   }
+//   res.status(200).json({
+//     status: 'success',
+//     data: {
+//       tour
+//     }
+//   });
+// });
+
+exports.getTour = factory.getOne(Tour, {path: 'reviews'});
 exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
   const year = req.params.year * 1;
   const plan = await Tour.aggregate([

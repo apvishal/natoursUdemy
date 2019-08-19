@@ -1,6 +1,7 @@
 const AppError = require('./../Utils/AppError');
 const catchAsync = require('./../Utils/catchAsync');
 const User = require('./../model/userModel');
+const factory = require('./handlerFactory');
 
 const filterObject = (obj, ...items) => {
   const filtered = {};
@@ -11,26 +12,19 @@ const filterObject = (obj, ...items) => {
   });
   return filtered;
 };
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
-  res.status(200).json({ data: { users } });
-});
+// exports.getAllUsers = catchAsync(async (req, res, next) => {
+//   const users = await User.find();
+//   res.status(200).json({ data: { users } });
+// });
 exports.createNewUser = (req, res) => {
   // placeholder...
-  res.status(500).json({ status: 'error', message: 'not implemented!' });
+  res.status(500).json({ status: 'error', message: 'not implemented, use the signup functionality...' });
 };
-exports.getUser = (req, res) => {
-  // placeholder...
-  res.status(500).json({ status: 'error', message: 'not implemented!' });
-};
-exports.updateUser = (req, res) => {
-  // placeholder...
-  res.status(500).json({ status: 'error', message: 'not implemented!' });
-};
-exports.deleteUser = (req, res) => {
-  // placeholder...
-  res.status(500).json({ status: 'error', message: 'not implemented!' });
-};
+
+exports.getAllUsers = factory.getAll(User);
+exports.getUser = factory.getOne(User);
+exports.updateUser = factory.updateOne(User);
+exports.deleteUser = factory.deleteOne(User);
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // make sure the user doesnt specify any passwords in the body, this is only for updating the user data
@@ -59,4 +53,4 @@ exports.deleteMe = async (req, res, next) => {
   await User.findByIdAndUpdate(req.user._id, { active: false });
 
   res.status(200).json({ status: 'success', data: null});
-};
+}; 
