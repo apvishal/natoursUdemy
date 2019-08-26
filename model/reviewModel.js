@@ -34,6 +34,17 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+
+reviewSchema.static.calcAverageRatings = function(tourID) {
+  // use aggregation to calculate the average of all the ratings...
+  const stats = await this.aggregate( [
+    {
+      $match: { tour: tourID}
+    }
+  ]);
+
+  console.log(stats);
+};
 reviewSchema.pre(/^find/, function(next) {
   // this.populate({
   //   path: 'tour',

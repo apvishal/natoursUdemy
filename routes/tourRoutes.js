@@ -22,12 +22,22 @@ router
   .get(tourController.aliasTopTours, tourController.getAllTours);
 
 router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
-router.route('/tour-stats').get(tourController.getTourStats);
+router
+  .route('/tour-stats')
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'guide-lead', 'guide'),
+    tourController.getTourStats
+  );
 // for just /api/v1/tours
 router
   .route('/')
-  .get(authController.protect, tourController.getAllTours)
-  .post(tourController.uploadTour);
+  .get(tourController.getAllTours)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin', 'guide-lead'),
+    tourController.uploadTour
+  );
 
 // when an ID is specified...
 router
@@ -39,7 +49,7 @@ router
     authController.restrictTo('admin', 'guide-lead'),
     tourController.deleteTour
   );
-  
+
 router.use('/:tourID/reviews', reviewRouter);
 
 // export the module

@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 const Tour = require('./../../model/tourModel');
+const User = require('./../../model/userModel');
+const Review = require('./../../model/reviewModel');
 
 const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
-
 
 console.log(`${__dirname}`);
 // connect to the database...
@@ -25,36 +26,40 @@ mongoose
     console.log('DB CONNECTION SUCCESSFUL');
   });
 
-  // read the contents file...
-  console.log(`${__dirname}`);
-  const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`));
+// read the contents file...
+console.log(`${__dirname}`);
+const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`));
+const users = JSON.parse(fs.readFileSync(`${__dirname}/users.json`));
+const reviews = JSON.parse(fs.readFileSync(`${__dirname}/reviews.json`));
 
-  // function to import data to database...
-  const importUtil = async () => {
-    // put to database...
-    try {
-        await Tour.create(tours);
-        console.log("IMPORT COMPLETED SUCCESSFULLY");
-    } catch (err) {
-        console.log(err);
-    }
-    process.exit();
-  };
+// function to import data to database...
+const importUtil = async () => {
+  // put to database...
+  try {
+    await Tour.create(tours);
+    await User.create(users, { validateBeforeSave: false });
+    await Review.create(reviews);
+    console.log('IMPORT COMPLETED SUCCESSFULLY');
+  } catch (err) {
+    console.log(err);
+  }
+  process.exit();
+};
 
-  const deleteUtil = async () => {
-    try {
-        await Tour.deleteMany();
-        console.log("DELETED");
+const deleteUtil = async () => {
+  try {
+    await Tour.deleteMany();
+    await User.deleteMany();
+    await Review.deleteMany();
+    console.log('DELETED');
+  } catch (err) {
+    console.log(err);
+  }
 
-    } catch (err) {
-        console.log(err);
-    }
+  process.exit();
+};
 
-    process.exit();
-  };
+console.log('hello from utility');
 
-
-  console.log("hello from utility");
-
-  if (process.argv[2] === '--import') importUtil();
-  else if (process.argv[2] === '--delete') deleteUtil();
+if (process.argv[2] === '--import') importUtil();
+else if (process.argv[2] === '--delete') deleteUtil();

@@ -20,6 +20,10 @@ exports.createNewUser = (req, res) => {
   // placeholder...
   res.status(500).json({ status: 'error', message: 'not implemented, use the signup functionality...' });
 };
+exports.getMe = (req,res,next) => {
+  req.params.id = req.user._id;
+  next();
+};
 
 exports.getAllUsers = factory.getAll(User);
 exports.getUser = factory.getOne(User);

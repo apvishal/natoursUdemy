@@ -115,6 +115,11 @@ const tourSchema = mongoose.Schema(
   }
 );
 
+// create an index, and order the elements by price, in acending order...
+// tourSchema.index({ price: 1 }); // single field index...
+tourSchema.index({ price: 1, ratingsAverage: -1 }); // compound indexing...
+tourSchema.index({ slug : -1 }); // single field index
+
 tourSchema.virtual('durationWeeks').get(function() {
   // we use function() instead of () => because we need access to 'this' keyword
   return this.duration / 7;
@@ -153,7 +158,7 @@ tourSchema.pre(/find/, function(next) {
   this.find({ secret: { $ne: true } });
   next();
 });
-// populate all of the objectIds with their actual data... 
+// populate all of the objectIds with their actual data...
 tourSchema.pre(/^find/, function(next) {
   // add 'populate' to the query...
   this.populate({
@@ -186,7 +191,6 @@ tourSchema.virtual('reviews', {
   foreignField: 'tour',
   localField: '_id'
 });
-
 
 // create a model using the schema created above... (first arg is a name of the mode, second is the schema we want to use...)
 module.exports = mongoose.model('Tour', tourSchema);
