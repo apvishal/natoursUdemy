@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Tour = require('./tourModel');
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -34,17 +35,58 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+// create an index so that a pair with user and review must be unique
+// this makes it do that a user can not make more than one review for the same tour...
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
-reviewSchema.static.calcAverageRatings = function(tourID) {
+reviewSchema.statics.calcAverageRatings = async function(tourID) {
   // use aggregation to calculate the average of all the ratings...
-  const stats = await this.aggregate( [
+  const stats = await this.aggregate([
     {
-      $match: { tour: tourID}
+      $match: { tour: tourID }
+    },
+    {
+      $group: {
+        _id: '$tour',
+        nRating: { $sum: 1 },
+        avgRating: { $avg: '$rating' }
+      }
     }
   ]);
 
-  console.log(stats);
+  // console.log(stats);
+
+  if (stats.length > 0) {
+    // update the tour (with the id stored in tourID) with the new average rating...
+    await Tour.findByIdAndUpdate(tourID, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].avgRating
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourID, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5 // 4.5 is the default when there are 0 reviews...
+    });
+  }
 };
+reviewSchema.post('save', function() {
+  this.constructor.calcAverageRatings(this.tour);
+});
+
+// this is how we would run a middleware for findByIdAndUpdate or findByIdAndDelete...
+// we must use both the pre and post middle ware like the following...
+reviewSchema.pre(/^findOneAnd/, async function(next) {
+  // use find one to get and store the current review...
+  this.r = await this.findOne();
+  // console.log(this.r);
+  // go on to the next middleware
+  next();
+});
+reviewSchema.post(/^findOneAnd/, async function() {
+  // this.findOne will not work, because this is a POST middleware, and we will not have access to the current review already since it has already been executed...
+  // thats why we what this.r from the pre middleware above...
+  await this.r.constructor.calcAverageRatings(this.r.tour);
+});
 reviewSchema.pre(/^find/, function(next) {
   // this.populate({
   //   path: 'tour',
@@ -58,7 +100,6 @@ reviewSchema.pre(/^find/, function(next) {
     path: 'user',
     select: 'name photo'
   });
-
 
   next();
 });

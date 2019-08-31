@@ -31,6 +31,7 @@ console.log(`${__dirname}`);
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`));
 const users = JSON.parse(fs.readFileSync(`${__dirname}/users.json`));
 const reviews = JSON.parse(fs.readFileSync(`${__dirname}/reviews.json`));
+console.log(reviews);
 
 // function to import data to database...
 const importUtil = async () => {

@@ -48,28 +48,28 @@ const userSchema = new mongoose.Schema({
   passwordResetTokenExpiration: Date
 });
 
-// middleware before saving to the database...
-userSchema.pre('save', async function(next) {
-  // check if the massword was modified first...
-  if (!this.isModified('password')) return next();
+// // middleware before saving to the database...
+// userSchema.pre('save', async function(next) {
+//   // check if the massword was modified first...
+//   if (!this.isModified('password')) return next();
 
-  // we want to encrypt the password before saving it to the database...
-  this.password = await bcrypt.hash(this.password, 12);
-  // we dont need to actually store the passwordConfirm...
-  this.passwordConfirm = undefined;
-  next();
-});
+//   // we want to encrypt the password before saving it to the database...
+//   this.password = await bcrypt.hash(this.password, 12);
+//   // we dont need to actually store the passwordConfirm...
+//   this.passwordConfirm = undefined;
+//   next();
+// });
 
-// when we change our password...
-userSchema.pre('save', function() {
-  // move to next middleware if the password was not modified or if this is a new document...
-  if (!this.isModified('password') || this.isNew) next();
+// // when we change our password...
+// userSchema.pre('save', function() {
+//   // move to next middleware if the password was not modified or if this is a new document...
+//   if (!this.isModified('password') || this.isNew) next();
 
-  // the password was changed, and this is not a new document...
-  this.passwordChangedAt = Date.now() - 1000; // hack because sometimes saving to the database takes longer than granting a jsonwebtoken (which happens after this middleware is performed...)
+//   // the password was changed, and this is not a new document...
+//   this.passwordChangedAt = Date.now() - 1000; // hack because sometimes saving to the database takes longer than granting a jsonwebtoken (which happens after this middleware is performed...)
 
-  next();
-});
+//   next();
+// });
 
 userSchema.pre(/^find/, function() {
   this.find({ active: { $ne: false } });
