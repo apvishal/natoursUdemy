@@ -39,6 +39,15 @@ router
     tourController.uploadTour
   );
 
+  router
+    .route('/toursWithin/:distance/center/:latlon/unit/:unit')
+    .get(tourController.toursWithin);
+
+  router
+    .route('/distances/:center/unit/:unit')
+    .get(tourController.getDistances);
+
+
 // when an ID is specified...
 router
   .route('/:id')

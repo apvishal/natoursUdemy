@@ -210,3 +210,79 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
   ]);
   res.status(200).json({ status: 'success', data: { plan } });
 });
+
+
+exports.toursWithin = catchAsync(async (req, res, next) => {
+  // console.log(`*****${req.params}*****`);
+  // res.status(201).json({
+  //   body: req.params
+  // });
+
+  // get the params
+  const {distance, latlon, unit} = req.params;
+
+  const [lat, lon] = latlon.split(',');
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+  console.log(`${lat} ${lon} ${radius} ${distance}`);
+
+  if (!lat || !lon) {
+    next(new AppError("need to provide a lat and long as a comma separated string...", 400));
+  }
+
+  // find the tour within the range specified by the user
+  const tours = await Tour.find( { startLocation: { $geoWithin: { $centerSphere: [[lon, lat], radius] } } } );
+
+  if (tours) {
+    res.status(201).json({
+      status: 'success',
+      numTours: tours.length,
+      data: {
+        tourList: tours
+      }
+    });
+  }
+});
+
+exports.getDistances = catchAsync(async (req,res,next) => {
+  console.log(req.params);
+
+  // parse the data
+  const {center, unit} = req.params;
+  const [lat, lon] = center.split(',');
+
+  // error checking on lat and lon...
+  if (!lat || !lon) {
+    // the lat lon is not corectly provided...
+    next (new AppError('latlon must be a comma separated string...', 400));
+  }
+  // need to add a multipler to convert from kilometers to mi...
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001; // need to update the mi multiplier...
+
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [lon * 1, lat * 1] // * 1 to convert it to a number...
+        },
+        spherical: true,
+        distanceField: 'distance',
+        distanceMultiplier: multiplier
+      }
+    },
+    {
+      $project: {     // populate means only show these fields...
+        distance: 1,
+        name: 1
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      info: distances
+    }
+  });
+
+});

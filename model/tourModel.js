@@ -36,9 +36,10 @@ const tourSchema = mongoose.Schema(
       type: Number,
       default: 4.5,
       min: [1, 'minimum average is 1'],
-      max: [5, 'maximum average is 5']
+      max: [5, 'maximum average is 5'],
+      set: val => Math.round(val * 10) / 10
     },
-    ratingQuantity: {
+    ratingsQuantity: {
       type: Number,
       default: 0
     },
@@ -82,7 +83,7 @@ const tourSchema = mongoose.Schema(
       default: false
     },
     startLocation: {
-      // geoJason Object, must have a type of string and Point (or another geometric type..., along with a coordinate)
+      // geoJson Object, must have a type of string and Point (or another geometric type..., along with a coordinate)
       type: {
         type: String,
         default: 'Point',
@@ -119,11 +120,19 @@ const tourSchema = mongoose.Schema(
 // tourSchema.index({ price: 1 }); // single field index...
 tourSchema.index({ price: 1, ratingsAverage: -1 }); // compound indexing...
 tourSchema.index({ slug : -1 }); // single field index
-
+tourSchema.index({ startLocation: '2dsphere' });
 tourSchema.virtual('durationWeeks').get(function() {
   // we use function() instead of () => because we need access to 'this' keyword
   return this.duration / 7;
 });
+
+
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id'
+});
+
 
 // add to the tourSchema a middleware BEFORE saving a document (using the .pre() with the save option...)
 // NOTE this only works for .save() and .create(), not .insertMany()
@@ -163,7 +172,7 @@ tourSchema.pre(/^find/, function(next) {
   // add 'populate' to the query...
   this.populate({
     // get the actual 'guides' data
-    path: 'guides',
+    path: 'guides reviews',
     // get rid of unwanted data to be returned...
     select: '-__v -passwordChangedAt'
   });
@@ -177,20 +186,15 @@ tourSchema.post(/find/, function(doc, next) {
 });
 
 // MIDDLEWARE FOR AGGREGATION
-tourSchema.pre('aggregate', function(next) {
-  // this points to the aggregation object...
-  // unshift will append to the beginning of the array...
-  this.pipeline().unshift({ $match: { secret: { $ne: true } } });
+// tourSchema.pre('aggregate', function(next) {
+//   // this points to the aggregation object...
+//   // unshift will append to the beginning of the array...
+//   this.pipeline().unshift({ $match: { secret: { $ne: true } } });
 
-  console.log(this.pipeline());
-  next();
-});
+//   console.log(this.pipeline());
+//   next();
+// });
 
-tourSchema.virtual('reviews', {
-  ref: 'Review',
-  foreignField: 'tour',
-  localField: '_id'
-});
 
 // create a model using the schema created above... (first arg is a name of the mode, second is the schema we want to use...)
 module.exports = mongoose.model('Tour', tourSchema);

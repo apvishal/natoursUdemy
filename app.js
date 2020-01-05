@@ -1,10 +1,13 @@
 // first express js app with udemy
 
 const express = require('express');
+const path = require('path');
 const morgan = require('morgan');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewRoutes');
+
 const AppError = require('./Utils/AppError');
 const globalErrorHandler = require('./controller/errorController');
 const rateLimit = require('express-rate-limit');
@@ -12,9 +15,14 @@ const helmet = require('helmet');
 const mongooseSanitize = require('express-mongo-sanitize');
 const xssClean = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
 // instance of express...
 const app = express();
+
+// pug
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
 
 // set the security headers...
 app.use(helmet());
@@ -22,6 +30,8 @@ app.use(helmet());
 // app.use() enables you to use middleware functions...express.json is a middleware...
 // these are body parsers...
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
+
 
 // data sanitize against query injections... such as (email: {$gt: ""})
 app.use(mongooseSanitize()); // calls a function and returns a function...  this will filter out all operators used by mongodb ( $ . )
@@ -75,7 +85,8 @@ app.use('/api', limter);
 // example of a middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.headers.authorization);
+  // console.log(req.headers.authorization);
+  console.log(req.cookies);
   next();
 });
 
@@ -98,7 +109,9 @@ app.use((req, res, next) => {
   next();
 });
 */
+
 // mount the routers to the above with the new paths specified...
+app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);

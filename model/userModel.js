@@ -49,16 +49,16 @@ const userSchema = new mongoose.Schema({
 });
 
 // // middleware before saving to the database...
-// userSchema.pre('save', async function(next) {
-//   // check if the massword was modified first...
-//   if (!this.isModified('password')) return next();
+userSchema.pre('save', async function(next) {
+  // check if the massword was modified first...
+  if (!this.isModified('password')) return next();
 
-//   // we want to encrypt the password before saving it to the database...
-//   this.password = await bcrypt.hash(this.password, 12);
-//   // we dont need to actually store the passwordConfirm...
-//   this.passwordConfirm = undefined;
-//   next();
-// });
+  // we want to encrypt the password before saving it to the database...
+  this.password = await bcrypt.hash(this.password, 12);
+  // we dont need to actually store the passwordConfirm...
+  this.passwordConfirm = undefined;
+  next();
+});
 
 // // when we change our password...
 // userSchema.pre('save', function() {
@@ -78,6 +78,7 @@ userSchema.pre(/^find/, function() {
 // add a method to the schema, which is assessible outside of here as well...
 userSchema.methods.isCorrectPassword = async (candidate, pw) => {
   // return true or false, .compare will return a promise, so use await...
+  console.log(`comparing: ${candidate}, ${pw}`)
   return await bcrypt.compare(candidate, pw);
 };
 
