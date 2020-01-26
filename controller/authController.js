@@ -40,7 +40,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
     passwordChangedAt: req.body.passwordChangedAt, // THIS IS ONLY TEMPORARY...,
-    role: req.body.role
+    role: req.body.role,
+    photo: req.body.photo ? req.body.photo : 'default.jpg'
   });
 
   // create a jwt
